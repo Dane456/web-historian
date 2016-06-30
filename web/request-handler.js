@@ -8,12 +8,11 @@ var fs = require('fs');
 var actions = {
   GET: function(request, response) {
 
-    if (request.url === '/') {
+    if (request.url === '/' || request.url === '/styles.css') {
       helpers.checkValidExtension(request, response);
 
     } else {
       var inList = archive.isUrlArchived(request.url)
-      .then(function(exists) { console.log('promise exists: ', exists); return exists; })
       .catch(function(error) { helpers.sendResponse(response, 'NAT FOWND', 404); })
       .then(function(exists) {
               
@@ -29,7 +28,6 @@ var actions = {
         });
       });
     }
-    //console.log('file: ' + request.url + ' exists: ', inList);
 
   },
   POST: function(request, response) {

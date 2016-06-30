@@ -56,8 +56,11 @@ exports.checkValidExtension = function(request, response) {
   var isValidExt = validExtensions[ext];
 
   if (isValidExt) {
-    //hard-coded for index.html
-    var filepath = archive.paths.index;
+    if (ext === '.html') {
+      var filepath = archive.paths.index;
+    } else if (ext === '.css') {
+      var filepath = archive.paths.style;
+    }
     console.log('filepath: ', filepath);
     exports.readFile(filepath, response, ext);
   }

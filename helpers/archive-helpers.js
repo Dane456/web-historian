@@ -29,34 +29,41 @@ exports.initialize = function(pathsObj) {
 // modularize your code. Keep it clean!
 
 
-exports.readListOfUrls = function(callback) {
-  fs.readFile(exports.paths.list, 'utf-8', function(err, data) {
-    if (err) { 
-      console.log('readListOfUrls no data');
-      return;
-    }
-    // console.log('readListOfUrls data: ' +  data + ' type: ' + typeof data);
-    return callback(data.split('\n'));
-
-  });
-};
-
-exports.isUrlInList = function(url, callback) {
-  exports.readListOfUrls(function(data) {
-    for (item of data) {
-      if (item === url) {
-        console.log('item:', item);
-        return callback(true);
+exports.readListOfUrls = function() {
+  return new Promise(function(resolve, reject) {
+    fs.readFile(exports.paths.list, 'utf-8', function(err, data) {
+      if (err) { 
+        reject(console.log('readListOfUrls no data'));
       }
-    }
-    return callback(false);
+      // console.log('readListOfUrls data: ' +  data + ' type: ' + typeof data);
+      resolve(data.split('\n'));
+    });
+  });
+
+
+
+};
+
+exports.isUrlInList = function(url) {
+  return new Promise(function(resolve, reject) {
+    exports.readListOfUrls().then(function(data) {
+      for (item of data) {
+        if (item === url) {
+          console.log('item:', item);
+          resolve(true);
+        }
+      }
+      reject(false);
+    });
   });
 
 };
 
-exports.addUrlToList = function(url, callback) {
-  var addition = url + '\n';
-  fs.appendFile(exports.paths.list, addition, callback);
+exports.addUrlToList = function(url) {
+  return new Promise(function(resolve, reject) {
+    var addition = url + '\n';
+    fs.appendFile(exports.paths.list, addition, resolve);
+  });
 };
 
 exports.isUrlArchived = function(fileURL) {
@@ -71,5 +78,27 @@ exports.isUrlArchived = function(fileURL) {
   });
 };
 
-exports.downloadUrls = function() {
+exports.downloadUrls = function(array) {
+
+  console.log('listArray: ', array);
+  for (var item of array) {
+    console.log('__dirname: ', __dirname);
+    console.log('exports.paths.archivedSites: ', exports.paths.archivedSites);
+    var fixturePath = exports.paths.archivedSites + '/' + item;
+    console.log('fixturePath: ', fixturePath);
+
+    // Create or clear the file.
+    var fd = fs.openSync(fixturePath, 'w');
+    fs.writeSync(fd, item);
+    fs.closeSync(fd);
+
+    // Write data to the file.
+    fs.writeFile(fixturePath, item);
+  }  
+
+  //TODO: Clear when finished?
+ // fs.writeFile(exports.paths.list, '');
+
 };
+
+
