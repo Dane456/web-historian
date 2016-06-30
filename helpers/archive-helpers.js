@@ -2,7 +2,7 @@ var fs = require('fs');
 var path = require('path');
 var _ = require('underscore');
 var helpers = require('../web/http-helpers.js');
-
+var Promise = require('bluebird');
 /*
  * You will need to reuse the same paths many times over in the course of this sprint.
  * Consider using the `paths` object below to store frequently used file paths. This way,
@@ -59,14 +59,16 @@ exports.addUrlToList = function(url, callback) {
   fs.appendFile(exports.paths.list, addition, callback);
 };
 
-exports.isUrlArchived = function(fileURL, callback) {
-  fs.readFile(path.join(exports.paths.archivedSites, fileURL), 'utf-8', function(err, data) {
-    if (err) {
-      callback(false);
-    }
-    callback(true);
+exports.isUrlArchived = function(fileURL) {
+  return new Promise(function(resolve, reject) {
+    fs.readFile(path.join(exports.paths.archivedSites, fileURL), 'utf-8', function(err, data) {
+      if (err) {
+        reject(false);
+      }
+      resolve(true);
 
-  }); 
+    });     
+  });
 };
 
 exports.downloadUrls = function() {

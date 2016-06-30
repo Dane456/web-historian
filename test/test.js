@@ -5,6 +5,7 @@ var archive = require('../helpers/archive-helpers');
 var path = require('path');
 var supertest = require('supertest');
 var initialize = require('../web/initialize.js');
+var Promise = require('bluebird');
 
 initialize(path.join(__dirname, '/testdata'));
 
@@ -16,14 +17,14 @@ archive.initialize({
 var request = supertest.agent(server);
 
 describe('server', function() {
-  // describe('GET /', function () {
-  //   it('should return the content of index.html', function (done) {
-  //     // just assume that if it contains an <input> tag its index.html
-  //     request
-  //       .get('/')
-  //       .expect(200, /<input/, done);
-  //   });
-  // });
+  describe('GET /', function () {
+    it('should return the content of index.html', function (done) {
+      // just assume that if it contains an <input> tag its index.html
+      request
+        .get('/')
+        .expect(200, /<input/, done);
+    });
+  });
 
   describe('archived websites', function () {
     describe('GET', function () {
@@ -52,27 +53,27 @@ describe('server', function() {
       });
     });
 
-    // describe('POST', function () {
-    //   it('should append submitted sites to \'sites.txt\'', function(done) {
-    //     var url = 'www.example.com';
+    describe('POST', function () {
+      it('should append submitted sites to \'sites.txt\'', function(done) {
+        var url = 'www.example.com';
 
-    //     // Reset the test file and process request
-    //     fs.closeSync(fs.openSync(archive.paths.list, 'w'));
+        // Reset the test file and process request
+        fs.closeSync(fs.openSync(archive.paths.list, 'w'));
 
-    //     request
-    //       .post('/')
-    //       .type('form')
-    //       .send({ url: url })
-    //       .expect(302, function (err) {
-    //         if (!err) {
-    //           var fileContents = fs.readFileSync(archive.paths.list, 'utf8');
-    //           expect(fileContents).to.equal(url + '\n');
-    //         }
+        request
+          .post('/')
+          .type('form')
+          .send({ url: url })
+          .expect(302, function (err) {
+            if (!err) {
+              var fileContents = fs.readFileSync(archive.paths.list, 'utf8');
+              expect(fileContents).to.equal(url + '\n');
+            }
 
-    //         done(err);
-    //       });
-    //   });
-    // });
+            done(err);
+          });
+      });
+    });
   });
 });
 
@@ -130,13 +131,15 @@ describe('archive helpers', function() {
       var counter = 0;
       var total = 2;
 
-      archive.isUrlArchived('www.example.com', function (exists) {
+      archive.isUrlArchived('www.example.com').then(function (exists) {
+        console.log('test exists true: ', exists);
         expect(exists).to.be.true;
         if (++counter === total) { done(); }
       });
 
-      archive.isUrlArchived('www.notarchived.com', function (exists) {
+      archive.isUrlArchived('www.notarchived.com').catch(function (exists) {
         expect(exists).to.be.false;
+        console.log('test exists false: ', exists);
         if (++counter === total) { done(); }
       });
     });

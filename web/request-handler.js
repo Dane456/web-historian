@@ -7,31 +7,30 @@ var fs = require('fs');
 
 var actions = {
   GET: function(request, response) {
-    // console.log('here');
-    var inList = archive.isUrlArchived(request.url, function(exists) { console.log('callback exists: ', exists); return exists; });
 
-    console.log('file: ' + request.url + ' exists: ', inList);
-    // console.log('there');
     if (request.url === '/') {
       helpers.checkValidExtension(request, response);
 
-    } else if (inList) {
-      
-      fs.readFile(exports.paths.archivedSites + request.url, 'utf-8', function(err, data) {
-
-        if (err) {
-          console.log('Error : ', err);
-          return;
-        }
-        console.log('url found data: ', data);
-        helpers.sendResponse(response, data);
-
-      });
-
     } else {
-      console.log('not found');
-      helpers.sendResponse(response, 'NAT FOWND', 404);
+      var inList = archive.isUrlArchived(request.url)
+      .then(function(exists) { console.log('promise exists: ', exists); return exists; })
+      .catch(function(error) { helpers.sendResponse(response, 'NAT FOWND', 404); })
+      .then(function(exists) {
+              
+        fs.readFile(archive.paths.archivedSites + request.url, 'utf-8', function(err, data) {
+
+          if (err) {
+            console.log('Error : ', err);
+            return;
+          }
+          console.log('url found data: ', data);
+          helpers.sendResponse(response, data);
+
+        });
+      });
     }
+    //console.log('file: ' + request.url + ' exists: ', inList);
+
   },
   POST: function(request, response) {
     console.log('Post');
