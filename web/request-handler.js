@@ -2,51 +2,80 @@ var path = require('path');
 var archive = require('../helpers/archive-helpers');
 var helpers = require('./http-helpers.js');
 var fs = require('fs');
+var requestData = require('request');
+var fetch = require('../workers/htmlfetcher.js');
 // require more modules/folders here!
 
 
 var actions = {
   GET: function(request, response) {
-    // console.log('here');
-    var inList = archive.isUrlArchived(request.url, function(exists) { console.log('callback exists: ', exists); return exists; });
+    archive.downloadUrls();
 
-    console.log('file: ' + request.url + ' exists: ', inList);
-    // console.log('there');
-    if (request.url === '/') {
+    if (request.url === '/' || request.url === '/styles.css') {
       helpers.checkValidExtension(request, response);
 
-    } else if (inList) {
-      
-      fs.readFile(exports.paths.archivedSites + request.url, 'utf-8', function(err, data) {
-
-        if (err) {
-          console.log('Error : ', err);
-          return;
-        }
-        console.log('url found data: ', data);
-        helpers.sendResponse(response, data);
-
-      });
-
     } else {
-      console.log('not found');
-      helpers.sendResponse(response, 'NAT FOWND', 404);
+      var inList = archive.isUrlArchived(request.url)
+      .catch(function(error) { helpers.sendResponse(response, 'NAT FOWND', 404); })
+      .then(function(exists) {
+              
+        fs.readFile(archive.paths.archivedSites + request.url, 'utf-8', function(err, data) {
+
+          if (err) {
+            console.log('Error : ', err);
+            return;
+          }
+          console.log('url found data: ', data);
+          helpers.sendResponse(response, data);
+
+        });
+      });
     }
+
   },
   POST: function(request, response) {
-    console.log('Post');
+    // console.log('Post');
     var body = '';
     request.on('data', function(chunk) {
       body += chunk;
     });
     request.on('end', function() {
-      // console.log('body: ', body.slice(4));
-      archive.addUrlToList(body.slice(4), function(err) {
-        var fileContents = fs.readFileSync(archive.paths.list, 'utf8');
-        console.log('fileContents:' + fileContents + ' typeof' + typeof fileContents);
+      var url = body.slice(4);
+      // console.log('body.slice(4): ', url);
+      archive.isUrlArchived(url)
+      .then(function() {
+        fs.readFile(archive.paths.archivedSites + '/' + url, 'utf-8', function(err, data) {
+          if (err) {
+            // console.log('Error : ', err);
+            return;
+          }
+          helpers.headers['Content-Type'] = 'text/html';
+          helpers.sendResponse(response, data);
+
+        });
+      })
+      .catch(function() {
+        console.log('addUrlToList: ', url);
+        archive.addUrlToList(url);
+        //show loading.html
+        fs.readFile(archive.paths.loading, 'utf-8', function(err, data) {
+          if (err) {
+            // console.log('Error : ', err);
+            return;
+          }
+          helpers.headers['Content-Type'] = 'text/html';
+          helpers.sendResponse(response, data);
+
+        });
       });
-      // console.log(archive.readListOfUrls, function));
-      helpers.sendResponse(response, '{}', 302);
+      // .then(function(){
+      //   archive.readListOfUrls().then(function(urls){
+      //     archive.downloadUrls(urls);
+      //   })
+      // });
+
+      //Standard post response
+      // helpers.sendResponse(response, '{}', 302);
     });
   },
   OPTIONS: function(request, response) {
