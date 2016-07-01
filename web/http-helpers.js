@@ -45,7 +45,7 @@ exports.readFile = function(filepath, response, ext) {
 
 exports.checkValidExtension = function(request, response) {
 
-  console.log('checkValidExtension: ', request.url);
+  // console.log('checkValidExtension: ', request.url);
   if (request.url === '/') {
     var filename = '/index.html'; 
   } else {
@@ -56,12 +56,10 @@ exports.checkValidExtension = function(request, response) {
   var isValidExt = validExtensions[ext];
 
   if (isValidExt) {
-    if (ext === '.html') {
-      var filepath = archive.paths.index;
-    } else if (ext === '.css') {
-      var filepath = archive.paths.style;
-    }
-    console.log('filepath: ', filepath);
+    filename = filename.slice(1, filename.indexOf('.'));
+    // console.log('filename', filename);
+    
+    var filepath = archive.paths[filename];
     exports.readFile(filepath, response, ext);
   }
   

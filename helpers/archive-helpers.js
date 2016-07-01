@@ -3,6 +3,7 @@ var path = require('path');
 var _ = require('underscore');
 var helpers = require('../web/http-helpers.js');
 var Promise = require('bluebird');
+var request = require('request');
 /*
  * You will need to reuse the same paths many times over in the course of this sprint.
  * Consider using the `paths` object below to store frequently used file paths. This way,
@@ -15,7 +16,8 @@ exports.paths = {
   archivedSites: path.join(__dirname, '../archives/sites'),
   list: path.join(__dirname, '../archives/sites.txt'),
   index: path.join(__dirname, '../web/public/index.html'),
-  style: path.join(__dirname, '../web/public/styles.css')
+  loading: path.join(__dirname, '../web/public/loading.html'),
+  styles: path.join(__dirname, '../web/public/styles.css')
 };
 
 // Used for stubbing paths for tests, do not modify
@@ -78,27 +80,23 @@ exports.isUrlArchived = function(fileURL) {
   });
 };
 
-exports.downloadUrls = function(array) {
-
-  console.log('listArray: ', array);
-  for (var item of array) {
-    console.log('__dirname: ', __dirname);
-    console.log('exports.paths.archivedSites: ', exports.paths.archivedSites);
-    var fixturePath = exports.paths.archivedSites + '/' + item;
-    console.log('fixturePath: ', fixturePath);
-
-    // Create or clear the file.
-    var fd = fs.openSync(fixturePath, 'w');
-    fs.writeSync(fd, item);
-    fs.closeSync(fd);
-
-    // Write data to the file.
-    fs.writeFile(fixturePath, item);
-  }  
-
-  //TODO: Clear when finished?
- // fs.writeFile(exports.paths.list, '');
-
+exports.downloadUrls = function() {
+  exports.readListOfUrls().then(function(array) {
+    console.log('listArray: ', array);
+    array.forEach(function(item) {
+      var fixturePath = exports.paths.archivedSites + '/' + item;
+      console.log('fixturePath: ', fixturePath);
+      var httpURL = 'http://' + item;
+      request(httpURL, function(err, res, body) {
+        if (!err && res.statusCode === 200) {
+          console.log('made it into request for item: ', item);
+          fs.writeFile(fixturePath, body);
+        }
+      });  
+    });
+  }).then(function() {
+    fs.writeFile(exports.paths.list, '', function() { console.log('items deleted'); } );
+  });
 };
 
 
